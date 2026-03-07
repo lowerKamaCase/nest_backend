@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { UsersService } from 'src/users/users.service';
@@ -12,12 +12,17 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async login(userDto: CreateUserDto) {}
+  async login(userDto: CreateUserDto) {
+    console.log('🚀 ~ AuthService ~ login ~ userDto:', userDto);
+    const user = await this.validateUser(userDto);
+    console.log('🚀 ~ AuthService ~ login ~ user:', user);
+    return this.generateToken(user);
+  }
 
   async registration(userDto: CreateUserDto) {
     const candidate = await this.userService.getUserByEmail(userDto.email);
     if (candidate) {
-      throw new HttpException('ПОльзователь с таким email существует', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Пользователь с таким email существует', HttpStatus.BAD_REQUEST);
     }
 
     const hashPassword = await bcrypt.hash(userDto.password, 5);
@@ -27,11 +32,28 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  async generateToken(user: User) {
+  private async generateToken(user: User) {
     const payload = { email: user.email, id: user.id, roles: user.roles };
 
     return {
       token: this.jwtService.sign(payload),
     };
+  }
+
+  private async validateUser(userDto: CreateUserDto) {
+    const user = await this.userService.getUserByEmail(userDto.email);
+    if (!user) {
+      throw new UnauthorizedException({ message: 'No such user' });
+    }
+
+    console.log('🚀 ~ AuthService ~ validateUser ~ userDto.password:', userDto.password);
+    console.log('🚀 ~ AuthService ~ validateUser ~ user.password:', user.password);
+    const passwordEquals = await bcrypt.compare(userDto.password, user.password);
+
+    if (!passwordEquals) {
+      throw new UnauthorizedException({ message: 'Некорректный email или пароль' });
+    }
+
+    return user;
   }
 }
