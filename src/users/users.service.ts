@@ -18,6 +18,7 @@ export class UsersService {
 
     if (role?.id) {
       user.$set('roles', [role.id]);
+      user.roles = [role];
     }
 
     return user;
@@ -25,5 +26,9 @@ export class UsersService {
 
   async getAllUsers() {
     return this.userRepository.findAll({ include: { all: true } });
+  }
+
+  async getUserByEmail(email: string) {
+    return this.userRepository.findOne({ where: { email }, include: { all: true } });
   }
 }
