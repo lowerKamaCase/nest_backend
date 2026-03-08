@@ -13,9 +13,7 @@ export class AuthService {
   ) {}
 
   async login(userDto: CreateUserDto) {
-    console.log('🚀 ~ AuthService ~ login ~ userDto:', userDto);
     const user = await this.validateUser(userDto);
-    console.log('🚀 ~ AuthService ~ login ~ user:', user);
     return this.generateToken(user);
   }
 
@@ -46,8 +44,6 @@ export class AuthService {
       throw new UnauthorizedException({ message: 'No such user' });
     }
 
-    console.log('🚀 ~ AuthService ~ validateUser ~ userDto.password:', userDto.password);
-    console.log('🚀 ~ AuthService ~ validateUser ~ user.password:', user.password);
     const passwordEquals = await bcrypt.compare(userDto.password, user.password);
 
     if (!passwordEquals) {
